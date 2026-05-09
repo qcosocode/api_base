@@ -1,0 +1,28 @@
+
+  topico => mediciones/equipoId 
+         => mediciones/EQ-001
+  
+  El equipo tendrá un archivo de configuración ? 
+
+  {
+    equipoId : "EQ-001",
+    Sensores : [
+    {
+    sensorId :  "S-001"
+    codigoPCB : "V1"
+    valor: 221.23
+    },
+    {
+    sensorId :  "S-002"
+    codigoPCB : "V2"
+    valor: 221.5
+    },
+    {
+    sensorId :  "S-003"
+    codigoPCB : "V3"
+    valor: 221.9
+    }
+
+    ]
+    
+  }

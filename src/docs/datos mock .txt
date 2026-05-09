@@ -1,0 +1,145 @@
+  
+
+
+  
+//Equipos
+
+       {                                                 
+        "nombre": "Equipo 2 ",
+        "modelo": "Base 5 Sensores",
+        "descripcion": "Equipo de Monitoreo Ambiente",
+        "isActive": true
+        }
+
+
+  
+//Sensores 
+
+POST http://localhost:3000/sensores
+  
+  
+  
+ // sensor 1
+              {
+                "nombre" : "temperatura ambiente ",
+                 "codigoPCB" : "T1",
+                 "tipo" : "termocupla",
+                 "modelo" : "MAX156",
+                 "unidad" : "°C",
+                 "equipoId": "d06056c8-96e5-4a64-b20a-5a86965d806a",
+                 "is_on": "true"
+               }
+
+
+  // Sensor 2 
+
+               {
+                  "nombre": "Fase R",
+                  "codigoPCB": "V1",
+                  "tipo": "Voltaje",
+                  "modelo": "ZMPT",
+                  "unidad": "V",
+                  "is_on": true,
+                 "equipoId": "d06056c8-96e5-4a64-b20a-5a86965d806a"
+                }
+
+  // Sensor 3
+
+                {
+                  "nombre" : "Fase S",
+                  "codigoPCB": "V2",
+                  "tipo": "Voltaje",
+                  "modelo": "ZMPT",
+                  "unidad": "V",
+                  "is_on": true,
+                  "equipoId": "d06056c8-96e5-4a64-b20a-5a86965d806a"
+                }
+
+
+ // Punto Monitoreo 
+     
+    Para crear solo necesitamos 
+    POST http://localhost:3000/puntos-monitoreo
+
+            {
+            "nombre": "Tablero Bombas",
+            "descripcion": "Tablero encargado de alimentar 4 bombas de aspiración ",
+            "institucionId": "575c5623-aa0b-4907-84b9-4b55127fb790",
+            }
+
+
+            {
+            "nombre": "Tablero 1",
+            "descripcion": "Tablero encargado de alimentar 6 compresores 7.2 hp tausem",
+            "institucionId": "575c5623-aa0b-4907-84b9-4b55127fb790",
+            }
+          
+
+            {
+              "nombre": "Horno Rotativo ",
+              "descripcion": "Medicion de temperatura interna de Horno ",
+              "institucionId": "575c5623-aa0b-4907-84b9-4b55127fb790",
+              "categoria" : "Horno"
+            }
+             
+
+
+
+       Servidor responde  
+
+       GET  http://localhost:3000/puntos-monitoreo
+
+
+        {
+            "id": "f8d39197-b1aa-41b8-814b-9b4c0e8076b3",
+            "nombre": "Tablero Bombas",
+            "descripcion": "Tablero encargado de alimentar 4 bombas de aspiración ",
+            "institucionId": "575c5623-aa0b-4907-84b9-4b55127fb790",
+            "createdAt": "2025-12-16T14:57:59.029Z",
+            "updatedAt": "2025-12-16T14:57:59.029Z"
+        },
+        {
+            "id": "e37764bc-7b89-457a-bd38-68fd086a7442",
+            "nombre": "Tablero 1",
+            "descripcion": "Tablero encargado de alimentar 6 compresores 7.2 hp tausem",
+            "institucionId": "575c5623-aa0b-4907-84b9-4b55127fb790",
+            "createdAt": "2025-12-16T14:57:59.016Z",
+            "updatedAt": "2025-12-16T14:57:59.016Z"
+        }
+
+
+
+  // Institucion 
+
+        Obtener 
+        
+        GET  http://localhost:3000/institucion/
+
+        Crear institucion 
+
+        POST http://localhost:3000/institucion/
+
+
+         {
+            "nombre" : "Insituto Modelo ",
+             "dirección" : " nn" ,
+             "telefono" : "22222"       
+         }
+
+         {
+            "nombre" : "Insituto Cardiologico ",
+             "dirección" : " 9 de Julio 3000" ,
+             "telefono" : "22222 - 22222"       
+         }
+          
+
+        Eliminar 
+
+        DELETE http://localhost:3000/institucion/ab8ccc03-b2c4-40bd-a4e6-07440432a90c
+
+        id = "ab8ccc03-b2c4-40bd-a4e6-07440432a90c"
+
+        Actualizar 
+        
+        PUT http://localhost:3000/institucion/:institucionId
+        PUT http://localhost:3000/institucion/ff75b2c4-223e-4186-b9b6-38ca76459bee

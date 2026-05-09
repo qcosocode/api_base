@@ -1,0 +1,164 @@
+/* */
+
+
+Equipos 
+
+POST       http://localhost:3001/equipos
+   
+        {   
+                                                        
+             "nombre": "Equipo 2 ",
+             "modelo": "Base 5 Sensores",
+             "descripcion": "Equipo de Monitoreo Ambiente",
+             "isActive": true
+
+        }
+
+
+
+GET     http://localhost:3001/equipos
+
+{
+    "data": [
+        {
+            "equipoId": "a9e2cf9e-ed46-4634-985a-214466688a2c",
+            "nombre": "Equipo 2 ",
+            "modelo": "Base 5 Sensores",
+            "descripcion": "Equipo de Monitoreo Ambiente",
+            "isActive": true,
+            "puntoMonitoreoId": null,
+            "createdAt": "2026-05-07T21:58:50.556Z",
+            "updatedAt": "2026-05-07T21:58:50.556Z"
+        },
+        {
+            "equipoId": "e472f3e7-3e98-427a-bd0e-7a5f849d9e8d",
+            "nombre": "Equipo 1 ",
+            "modelo": "Base 5 Sensores",
+            "descripcion": "Equipo de Monitoreo de Cultivo ",
+            "isActive": true,
+            "puntoMonitoreoId": null,
+            "createdAt": "2026-05-07T21:58:26.654Z",
+            "updatedAt": "2026-05-07T21:58:26.654Z"
+        }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 1,
+    "filters": {}
+}
+
+// Sensores 
+
+POST  http://localhost:3001/sensores
+ 
+   {
+        "nombre" : "Temperatura suelo ",
+        "codigoPCB": "T2",
+        "tipo": "Temperatura",
+        "modelo": "d18b20",
+        "unidad": "°C",
+        "is_on": true,
+        "equipoId": "a9e2cf9e-ed46-4634-985a-214466688a2c"
+   }
+
+   
+   {
+        "nombre" : "Humedad de suelo ",
+        "codigoPCB": "H",
+        "tipo": "Humedad",
+        "modelo": "DHT21",
+        "unidad": "%RH",
+        "is_on": true,
+        "equipoId": "a9e2cf9e-ed46-4634-985a-214466688a2c"
+   }
+
+GET   http://localhost:3001/sensores
+
+   {
+    "data": [
+        {
+            "sensorId": "8731875c-009f-4252-9a98-93834d47077b",
+            "nombre": "Humedad de suelo ",
+            "codigoPCB": "H",
+            "tipo": "Humedad",
+            "modelo": "DHT21",
+            "unidad": "%RH",
+            "is_on": true,
+            "equipoId": "a9e2cf9e-ed46-4634-985a-214466688a2c"
+        },
+        {
+            "sensorId": "a1f2a45c-7bea-4f8b-a4ff-99e472a53509",
+            "nombre": "Temperatura suelo ",
+            "codigoPCB": "T2",
+            "tipo": "Temperatura",
+            "modelo": "d18b20",
+            "unidad": "°C",
+            "is_on": true,
+            "equipoId": "a9e2cf9e-ed46-4634-985a-214466688a2c"
+        }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 1
+}
+
+
+   
+
+// Punto de Monitoreo 
+
+  POST   http://localhost:3001/puntos-monitoreo
+             {
+                    "nombre": "Tablero 1 ",
+                    "descripcion": "Tablero destinado al Equipo de Cultivo",
+                    "institucionId": "f7f9c9ed-0721-4e8e-bd79-8ca884c4f9c0"
+             }
+
+  GET   http://localhost:3001/puntos-monitoreo
+            {
+    "data": [
+        {
+            "id": "beb3568e-34c0-4239-aded-0e9cb70b29dd",
+            "nombre": "Tablero 1",
+            "descripcion": "Tablero destinado al Equipo de Cultivo",
+            "categoria": null,
+            "institucionId": "f7f9c9ed-0721-4e8e-bd79-8ca884c4f9c0",
+            "createdAt": "2026-05-07T22:16:08.286Z",
+            "updatedAt": "2026-05-07T22:16:08.286Z"
+        }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
+            }
+
+// Institucion 
+
+POST   http://localhost:3001/institucion
+
+    {
+        "nombre": " RuView ",
+        "direccion": "Av. Rivadavia  123",
+        "telefono": ""
+    }
+
+ GET http://localhost:3001/institucion
+
+    {
+    "message": "Instituciones obtenidas correctamente",
+    "data": [
+        {
+            "id": "f7f9c9ed-0721-4e8e-bd79-8ca884c4f9c0",
+            "nombre": "RuView",
+            "direccion": "Av. Rivadavia  123",
+            "telefono": null,
+            "createdAt": "2026-05-07T22:13:41.388Z",
+            "updatedAt": "2026-05-07T22:13:41.388Z"
+        }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
+}
