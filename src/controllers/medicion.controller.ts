@@ -6,6 +6,20 @@ import {
   GetBySensorAndWindowQuery,
 } from '../interfaces/medicion.interface';
 
+/*
+  equpos/equiposId?inclui => la ultima medicion de los sensores de ese equipo 
+  equipos/equipoId/sensores/sensorId/mediciones/ => medicion.controller.ts  => 
+  // limite / 
+  mediciones/  => medicion.controller 
+
+  analiticas/mediciones/  analitica.contrller => medicion.services => 
+
+*/
+
+
+
+
+
 export class MedicionController {
 
   constructor( private service : MedicionService) {

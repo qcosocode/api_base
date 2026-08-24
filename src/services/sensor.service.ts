@@ -60,13 +60,23 @@ export class SensorService {
     return this.toSensorResponseDTO(reloaded);
   }
 
-  async getSensorById(sensorId: string): Promise<SensorResponseDTO> {
-    const sensor = await this.repo.findBySensorId(sensorId);
+  async getSensorById(sensorId: string, equipoId?: string): Promise<SensorResponseDTO> {
+    const sensor = equipoId
+      ? await this.repo.findBySensorIdAndEquipoId(sensorId, equipoId)
+      : await this.repo.findBySensorId(sensorId);
     if (!sensor) throw new Error(`Sensor no encontrado: ${sensorId}`);
     return this.toSensorResponseDTO(sensor);
   }
 
-  async updateSensor(sensorId: string, dto: SensorUpdateDTO): Promise<SensorResponseDTO> {
+  async updateSensor(
+    sensorId: string,
+    dto: SensorUpdateDTO,
+    equipoId?: string
+  ): Promise<SensorResponseDTO> {
+    if (equipoId) {
+      await this.getSensorById(sensorId, equipoId);
+    }
+
     // patch hacia entity (y si cambia equipo, lo seteamos)
     const patch: Partial<Sensor> = {};
 
@@ -77,8 +87,9 @@ export class SensorService {
     if (dto.unidad !== undefined) patch.unidad = dto.unidad;
     if (dto.is_on !== undefined) patch.is_on = dto.is_on;
 
-    if (dto.equipoId !== undefined) {
-      (patch as any).equipo = { equipoId: dto.equipoId } as any;
+    const targetEquipoId = equipoId ?? dto.equipoId;
+    if (targetEquipoId !== undefined) {
+      (patch as any).equipo = { equipoId: targetEquipoId } as any;
     }
 
     const updated = await this.repo.updateSensor(sensorId, patch);
@@ -90,7 +101,11 @@ export class SensorService {
     return this.toSensorResponseDTO(reloaded);
   }
 
-  async deleteSensor(sensorId: string): Promise<void> {
+  async deleteSensor(sensorId: string, equipoId?: string): Promise<void> {
+    if (equipoId) {
+      await this.getSensorById(sensorId, equipoId);
+    }
+
     const ok = await this.repo.deleteById(sensorId);
     if (!ok) throw new Error(`Sensor no encontrado: ${sensorId}`);
   }

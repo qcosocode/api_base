@@ -3,7 +3,29 @@ import { SensorService } from "../services/sensor.service";
 import { GetSensorsInput, PaginatedResponse, SensorCreateDTO, SensorQueryDTO, SensorUpdateDTO } from "../interfaces/sensor.interface.interface";
 import { parsePage, parseLimit, parseBool } from "../http/query.parser";
 
+interface SensorRouteParams {
+  equipoId?: string;
+  sensorId?: string;
+}
 
+/*
+   Si esto es equipo.sensor.controller.ts equipos/equipoId/sensores/ => raiz /sensorId 
+                                                                             /...
+   
+   todos los metodos deben recibir equipoId y sensorId 
+
+   validar que el equipo exista  getEquipoId => true o false con un metodo en el repositorio 
+
+   Equipo.sensores => la lista de sensores, uso un find 
+
+
+   Equipo.Modelo => template base pro 
+
+
+
+
+
+*/
 
 
 
@@ -16,7 +38,7 @@ export class SensorController {
  
       // GET /sensores
 
-      getAll = async (req: Request<{},{},{},SensorQueryDTO>, res: Response) => {
+      getAll = async (req: Request<SensorRouteParams, {}, {}, SensorQueryDTO>, res: Response) => {
         try {
           
            //Si yo parse en el controller que armo acá ? 
@@ -42,7 +64,7 @@ export class SensorController {
             const input : GetSensorsInput = {
              page: page,
              limit: limit,
-             equipoId: req.query.equipoId as string | undefined,
+             equipoId: req.params.equipoId ?? req.query.equipoId,
              tipo: req.query.tipo as string | undefined,
              activo: is_on
              }
@@ -57,15 +79,23 @@ export class SensorController {
       };
     
       // POST /sensores
-      createSensor = async (req: Request, res: Response) => {
+      createSensor = async (
+        req: Request<SensorRouteParams, {}, Partial<SensorCreateDTO>>,
+        res: Response
+      ) => {
         try {
-          const body = req.body as Partial<SensorCreateDTO>;
+          const body = req.body;
     
           // required mínimos
           // permitir sensorId vacio => y generar id
-          const required = [ "nombre", "codigoPCB", "tipo", "modelo", "unidad", "equipoId"] as const;
+          const required = ["nombre", "codigoPCB", "tipo", "modelo", "unidad"] as const;
           for (const k of required) {
             if (!body[k]) return res.status(400).json({ message: `Falta campo requerido: ${k}` });
+          }
+
+          const equipoId = req.params.equipoId ?? body.equipoId;
+          if (!equipoId) {
+            return res.status(400).json({ message: "Falta campo requerido: equipoId" });
           }
     
           const dto: SensorCreateDTO = {
@@ -75,7 +105,7 @@ export class SensorController {
             tipo: String(body.tipo),
             modelo: String(body.modelo),
             unidad: String(body.unidad),
-            equipoId: String(body.equipoId),
+            equipoId: String(equipoId),
             is_on: body.is_on === undefined ? undefined : Boolean(body.is_on),
           };
     
@@ -90,12 +120,12 @@ export class SensorController {
       };
     
       // GET /sensores/:sensorId
-      getSensorById = async (req: Request, res: Response) => {
+      getSensorById = async (req: Request<SensorRouteParams>, res: Response) => {
         try {
           const sensorId = String(req.params.sensorId)
           if (!sensorId) return res.status(400).json({ message: "sensorId es requerido" });
     
-          const sensor = await this.service.getSensorById(sensorId);
+          const sensor = await this.service.getSensorById(sensorId, req.params.equipoId);
           return res.status(200).json(sensor);
         } catch (err: any) {
           const msg = err.message ?? "Error";
@@ -105,13 +135,16 @@ export class SensorController {
       };
     
       // PUT /sensores/:sensorId
-      updateSensor = async (req: Request, res: Response) => {
+      updateSensor = async (
+        req: Request<SensorRouteParams, {}, SensorUpdateDTO>,
+        res: Response
+      ) => {
         try {
           const sensorId = String(req.params.sensorId);
           
           if (!sensorId) return res.status(400).json({ message: "sensorId es requerido" });
     
-          const body = req.body as SensorUpdateDTO;
+          const body = req.body;
     
           // validación simple: al menos 1 campo
           const hasAny =
@@ -125,7 +158,11 @@ export class SensorController {
     
           if (!hasAny) return res.status(400).json({ message: "Body vacío: no hay campos para actualizar" });
           
-          const updated = await this.service.updateSensor(sensorId, body);
+          const updated = await this.service.updateSensor(
+            sensorId,
+            body,
+            req.params.equipoId
+          );
           return res.status(200).json(updated);
         } catch (err: any) {
           const msg = err.message ?? "Error";
@@ -135,13 +172,13 @@ export class SensorController {
       };
     
       // DELETE /sensores/:sensorId
-      deleteSensor = async (req: Request, res: Response) => {
+      deleteSensor = async (req: Request<SensorRouteParams>, res: Response) => {
         try {
           const sensorId = String(req.params.sensorId);
           
           if (!sensorId) return res.status(400).json({ message: "sensorId es requerido" });
     
-          await this.service.deleteSensor(sensorId);
+          await this.service.deleteSensor(sensorId, req.params.equipoId);
           return res.status(204).send();
         } catch (err: any) {
           const msg = err.message ?? "Error";

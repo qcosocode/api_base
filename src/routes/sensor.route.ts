@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createSensorModule } from "../composition-root/sensor.composition-root";
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 const { sensorController } = createSensorModule();
 

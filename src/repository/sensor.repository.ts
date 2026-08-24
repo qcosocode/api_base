@@ -22,8 +22,7 @@ export class SensorRepository extends BaseRepository<Sensor> {
       .take(query.limit);
 
     if (query.equipoId) {
-      // OJO: esto depende del nombre de PK de Equipo (equipoId o id)
-      qb.andWhere("e.equipoId = :equipoId OR e.id = :equipoId", { equipoId: query.equipoId });
+      qb.andWhere("e.equipoId = :equipoId", { equipoId: query.equipoId });
     }
 
     if (query.tipo) {
@@ -45,6 +44,18 @@ export class SensorRepository extends BaseRepository<Sensor> {
       where: { sensorId },
       relations: { equipo: true },
     });
+  }
+
+  async findBySensorIdAndEquipoId(
+    sensorId: string,
+    equipoId: string
+  ): Promise<Sensor | null> {
+    return this.ormRepository
+      .createQueryBuilder("s")
+      .leftJoinAndSelect("s.equipo", "e")
+      .where("s.sensorId = :sensorId", { sensorId })
+      .andWhere("e.equipoId = :equipoId", { equipoId })
+      .getOne();
   }
 
   async existsBySensorId(sensorId: string): Promise<boolean> {
