@@ -1,5 +1,5 @@
 import { Medicion } from "../entities/medicion";
-import { MedicionRepository } from "../repository/medicion.repository";
+import { MedicionRepository } from "../repositories/medicion.repository";
 
 import {
   GetAllMedicionesQuery,

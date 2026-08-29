@@ -14,7 +14,7 @@ import {
   Index,
 } from 'typeorm';
 import { Institucion } from './institucion';
-import { Equipo } from './equipo';
+import { EquipoEntity } from './equipo.entity';
 
 @Entity({ name: 'puntos_monitoreo' })
 export class PuntoMonitoreo {
@@ -44,8 +44,8 @@ export class PuntoMonitoreo {
   institucion!: Institucion;
 
   // Relación con Equipo: un punto puede tener N equipos
-  @OneToMany(() => Equipo, (e) => e.puntoMonitoreo)
-  equipos!: Equipo[];
+  @OneToMany(() => EquipoEntity, (e) => e.puntoMonitoreo)
+  equipos!: EquipoEntity[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

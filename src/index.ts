@@ -14,6 +14,7 @@ import sensorRoutes from './routes/sensor.route';
 import puntoMonitoreoRoutes from "./routes/punto-monitoreo.routes";
 import institucionRoutes from "./routes/institucion.routes";
 import { bootstrap } from "./mqtt/mqtt_listener";
+import { errorHandler } from "./middleware/error-handler.middleware";
 
 
  AppDataSource.initialize()
@@ -45,6 +46,7 @@ app.use('/equipos', equiposRoutes);
 app.use('/sensores',sensorRoutes);
 app.use('/puntos-monitoreo',puntoMonitoreoRoutes);
 app.use('/institucion',institucionRoutes);
+app.use(errorHandler);
 
 
 app.listen( 3001, () => {console.log("Hola desde API v.1");});

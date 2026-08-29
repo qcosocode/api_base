@@ -1,4 +1,4 @@
-import { EquipoRepository } from "../repository/equipo.repository";
+import { EquipoRepository } from "../repositories/equipo.repository";
 import { EquipoService } from "../services/equipo.service";
 import { EquipoController } from "../controllers/equipo.controller";
 

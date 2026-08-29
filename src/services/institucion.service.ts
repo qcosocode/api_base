@@ -1,6 +1,6 @@
 // src/services/institucion.service.ts
 
-import { InstitucionRepository } from "../repository/institucion.repository";
+import { InstitucionRepository } from "../repositories/institucion.repository";
 import {
   CreateInstitucionDTO,
   InstitucionQueryDTO,

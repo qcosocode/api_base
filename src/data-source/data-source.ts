@@ -7,9 +7,9 @@ import "reflect-metadata";
 import {DataSource} from "typeorm"
 
 
-import { Equipo } from "../entities/equipo"
+import { EquipoEntity } from "../entities/equipo.entity"
 import { Medicion } from "../entities/medicion"
-import { Sensor } from "../entities/sensor"
+import { SensorEntity } from "../entities/sensor.entity"
 import { PuntoMonitoreo } from "../entities/punto-monitoreo";
 import { Institucion } from "../entities/institucion";
 
@@ -23,7 +23,7 @@ export const AppDataSource = new DataSource({
     database: "monitoreo_base",
 
     // Indispensable para habilitar TimescaleDB
-    entities: [Sensor, Medicion, Equipo, PuntoMonitoreo , Institucion],
+    entities: [SensorEntity, Medicion, EquipoEntity, PuntoMonitoreo , Institucion],
     synchronize: true,  // Activa creación automática de tablas (ideal para desarrollo)
     logging: false,
     

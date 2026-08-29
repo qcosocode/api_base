@@ -1,5 +1,5 @@
 // composition-root.ts
-import { MedicionRepository } from "../repository/medicion.repository"
+import { MedicionRepository } from "../repositories/medicion.repository"
 import { MedicionService } from "../services/medicion.service"
 import { MedicionController } from "../controllers/medicion.controller"
 

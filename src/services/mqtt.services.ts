@@ -2,7 +2,7 @@
 
 import mqtt, { MqttClient, IClientOptions } from "mqtt";
 import { AppDataSource } from "../data-source/data-source";
-import { MedicionRepository } from "../repository/medicion.repository";
+import { MedicionRepository } from "../repositories/medicion.repository";
 // import { SensorRepository } from "../repository/sensor.repository"; // 
 // import { Sensor } from "../entities/sensor";
 

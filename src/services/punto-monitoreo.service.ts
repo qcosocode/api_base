@@ -7,7 +7,7 @@ import {
   PuntoMonitoreoResponseDTO,
   PuntoMonitoreoUpdateDTO,
 } from "../interfaces/punto-monitoreo.interface";
-import { PuntoMonitoreoRepository } from "../repository/punto-monitoreo.respository";
+import { PuntoMonitoreoRepository } from "../repositories/punto-monitoreo.respository";
 import { PuntoMonitoreo } from "../entities/punto-monitoreo";
 
 export class NotFoundError extends Error {

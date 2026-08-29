@@ -2,7 +2,7 @@ import { Router } from "express";
 import { DataSource } from "typeorm";
 
 import { PuntoMonitoreo } from "../entities/punto-monitoreo";
-import { PuntoMonitoreoRepository } from "../repository/punto-monitoreo.respository";
+import { PuntoMonitoreoRepository } from "../repositories/punto-monitoreo.respository";
 import { PuntoMonitoreoService } from "../services/punto-monitoreo.service";
 import { PuntoMonitoreoController } from "../controllers/punto-monitoreo.controller";
 

@@ -1,141 +1,61 @@
-import { Sensor } from "../entities/sensor";
-import { GetSensorsInput, PaginatedResponse, SensorCreateDTO, SensorQueryDTO, SensorResponseDTO, SensorUpdateDTO } from "../interfaces/sensor.interface.interface";
-import { SensorRepository } from "../repository/sensor.repository";
-
-
-
+import { CreateSensorDTO } from "../dto/sensor/create-sensor.dto";
+import { PaginatedSensorDTO, SensorDTO } from "../dto/sensor/sensor.dto";
+import { UpdateSensorDTO } from "../dto/sensor/update-sensor.dto";
+import { ConflictError, NotFoundError } from "../errors/app.error";
+import { IEquipoRepository } from "../interfaces/repositories/equipo.repository.interface";
+import { ISensorRepository, SensorRepositoryQuery } from "../interfaces/repositories/sensor.repository.interface";
+import { SensorMapper } from "../mappers/sensor.mapper";
 
 export class SensorService {
+  constructor(
+    private readonly sensorRepository: ISensorRepository,
+    private readonly equipoRepository: IEquipoRepository
+  ) {}
 
-    // private  _repo : SensorRepository  no es necesario 
-    // colocando el modificador de acceso en el constructor ya se crea y asigna la variable repo
-   constructor( private repo : SensorRepository) {
-   }
-
-   async getAll(query: GetSensorsInput): Promise<PaginatedResponse<SensorResponseDTO>> {
-
-    // const page = this.parsePage(query.page);
-    // const limit = this.parseLimit(query.limit);
-
-       const page =  query.page;
-       const limit = query.limit;
-
-    
-
-    const { data, total } = await this.repo.findPaginated(query);
-    
-
-    return {
-      data: data.map(this.toSensorResponseDTO),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+  async getAll(query: SensorRepositoryQuery, nestedEquipoId?: string): Promise<PaginatedSensorDTO> {
+    if (nestedEquipoId) await this.requireEquipo(nestedEquipoId);
+    const { data, total } = await this.sensorRepository.findPaginated(query);
+    return { data: data.map(SensorMapper.toDTO), total, page: query.page, limit: query.limit, totalPages: Math.ceil(total / query.limit) };
   }
 
-  async createSensor(dto: SensorCreateDTO): Promise<SensorResponseDTO> {
-    
-    if (await this.repo.existsByCodigoPCB(dto.codigoPCB)) {
-      throw new Error(`Ya existe un sensor con codigoPCB=${dto.codigoPCB}`);
+  async createSensor(dto: CreateSensorDTO): Promise<SensorDTO> {
+    const equipo = await this.requireEquipo(dto.equipoId);
+    if (await this.sensorRepository.existsByCodigoPCB(dto.codigoPCB)) {
+      throw new ConflictError(`Ya existe un sensor con codigoPCB=${dto.codigoPCB}`);
     }
-
-    const sensor = new Sensor();
-    sensor.nombre = dto.nombre;
-    sensor.codigoPCB = dto.codigoPCB;
-    sensor.tipo = dto.tipo;
-    sensor.modelo = dto.modelo;
-    sensor.unidad = dto.unidad;
-    sensor.is_on = dto.is_on ?? true;
-
-    // asociar equipo (sin usar EquipoRepository, mantenemos simple)
-    (sensor as any).equipo = { equipoId: dto.equipoId } as any;
-
-    const saved = await this.repo.createSensor(sensor);
-
-    // si tu relación no viene cargada por save(), recargamos:
-    const reloaded = await this.repo.findBySensorId(saved.sensorId);
-    if (!reloaded) throw new Error("Error inesperado: sensor creado pero no encontrado");
-
-    return this.toSensorResponseDTO(reloaded);
+    return SensorMapper.toDTO(await this.sensorRepository.create(SensorMapper.toEntityForCreate(dto, equipo)));
   }
 
-  async getSensorById(sensorId: string, equipoId?: string): Promise<SensorResponseDTO> {
+  async getSensorById(sensorId: string, equipoId?: string): Promise<SensorDTO> {
     const sensor = equipoId
-      ? await this.repo.findBySensorIdAndEquipoId(sensorId, equipoId)
-      : await this.repo.findBySensorId(sensorId);
-    if (!sensor) throw new Error(`Sensor no encontrado: ${sensorId}`);
-    return this.toSensorResponseDTO(sensor);
+      ? await this.sensorRepository.findByIdAndEquipoId(sensorId, equipoId)
+      : await this.sensorRepository.findById(sensorId);
+    if (!sensor) throw new NotFoundError(`Sensor no encontrado: ${sensorId}`);
+    return SensorMapper.toDTO(sensor);
   }
 
-  async updateSensor(
-    sensorId: string,
-    dto: SensorUpdateDTO,
-    equipoId?: string
-  ): Promise<SensorResponseDTO> {
-    if (equipoId) {
-      await this.getSensorById(sensorId, equipoId);
-    }
-
-    // patch hacia entity (y si cambia equipo, lo seteamos)
-    const patch: Partial<Sensor> = {};
-
-    if (dto.nombre !== undefined) patch.nombre = dto.nombre;
-    if (dto.codigoPCB !== undefined) patch.codigoPCB = dto.codigoPCB;
-    if (dto.tipo !== undefined) patch.tipo = dto.tipo;
-    if (dto.modelo !== undefined) patch.modelo = dto.modelo;
-    if (dto.unidad !== undefined) patch.unidad = dto.unidad;
-    if (dto.is_on !== undefined) patch.is_on = dto.is_on;
+  async updateSensor(sensorId: string, dto: UpdateSensorDTO, equipoId?: string): Promise<SensorDTO> {
+    const entity = equipoId
+      ? await this.sensorRepository.findByIdAndEquipoId(sensorId, equipoId)
+      : await this.sensorRepository.findById(sensorId);
+    if (!entity) throw new NotFoundError(`Sensor no encontrado: ${sensorId}`);
 
     const targetEquipoId = equipoId ?? dto.equipoId;
-    if (targetEquipoId !== undefined) {
-      (patch as any).equipo = { equipoId: targetEquipoId } as any;
-    }
-
-    const updated = await this.repo.updateSensor(sensorId, patch);
-    if (!updated) throw new Error(`Sensor no encontrado: ${sensorId}`);
-
-    const reloaded = await this.repo.findBySensorId(sensorId);
-    if (!reloaded) throw new Error("Error inesperado: sensor actualizado pero no encontrado");
-
-    return this.toSensorResponseDTO(reloaded);
+    const targetEquipo = targetEquipoId ? await this.requireEquipo(targetEquipoId) : undefined;
+    return SensorMapper.toDTO(await this.sensorRepository.update(SensorMapper.applyUpdate(entity, dto, targetEquipo)));
   }
 
   async deleteSensor(sensorId: string, equipoId?: string): Promise<void> {
     if (equipoId) {
-      await this.getSensorById(sensorId, equipoId);
+      const entity = await this.sensorRepository.findByIdAndEquipoId(sensorId, equipoId);
+      if (!entity) throw new NotFoundError(`Sensor no encontrado: ${sensorId}`);
     }
-
-    const ok = await this.repo.deleteById(sensorId);
-    if (!ok) throw new Error(`Sensor no encontrado: ${sensorId}`);
+    if (!await this.sensorRepository.delete(sensorId)) throw new NotFoundError(`Sensor no encontrado: ${sensorId}`);
   }
 
-  // helpers
-  private parsePage(page?: string): number {
-    const n = Number(page ?? "1");
-    if (!Number.isFinite(n) || n < 1) return 1;
-    return Math.floor(n);
+  private async requireEquipo(equipoId: string) {
+    const equipo = await this.equipoRepository.findById(equipoId);
+    if (!equipo) throw new NotFoundError("EQUIPO_NOT_FOUND");
+    return equipo;
   }
-
-  private parseLimit(limit?: string): number {
-    const n = Number(limit ?? "10");
-    if (!Number.isFinite(n) || n < 1) return 10;
-    return Math.min(Math.floor(n), 100);
-  }
-
-  private toSensorResponseDTO(entity: Sensor): SensorResponseDTO {
-  return {
-    sensorId: entity.sensorId,
-    nombre: entity.nombre,
-    codigoPCB: entity.codigoPCB,
-    tipo: entity.tipo,
-    modelo: entity.modelo,
-    unidad: entity.unidad,
-    is_on: entity.is_on,
-    equipoId: (entity as any)?.equipo?.equipoId ?? (entity as any)?.equipo?.id ?? "", // depende tu entity Equipo
-  };
-
-  }
-
-
 }

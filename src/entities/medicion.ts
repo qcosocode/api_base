@@ -2,7 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index, PrimaryColumn } from "typeorm"
 import {
   Hypertable, TimeColumn } from "@timescaledb/typeorm";
-import { Sensor }  from "./sensor"
+import { SensorEntity } from "./sensor.entity"
 
 @Index('idx_medicion_sensor_time', ['sensor_id', 'time'])
 @Hypertable({
@@ -37,12 +37,12 @@ export class Medicion {
     
     
 
-    @ManyToOne(() => Sensor, sensor => sensor.mediciones,   // Navegabilidad => la entidad Sensor tendra un array de mediciones 
+    @ManyToOne(() => SensorEntity, sensor => sensor.mediciones,
     {
          onDelete: "CASCADE",
          onUpdate: "CASCADE",
     })
     @JoinColumn({name:"sensor_id"})
-    sensor!: Sensor
+    sensor!: SensorEntity
 
 }
