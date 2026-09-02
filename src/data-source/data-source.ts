@@ -8,7 +8,7 @@ import {DataSource} from "typeorm"
 
 
 import { EquipoEntity } from "../entities/equipo.entity"
-import { Medicion } from "../entities/medicion"
+import { MedicionEntity } from "../entities/medicion.entity"
 import { SensorEntity } from "../entities/sensor.entity"
 import { PuntoMonitoreo } from "../entities/punto-monitoreo";
 import { Institucion } from "../entities/institucion";
@@ -23,7 +23,7 @@ export const AppDataSource = new DataSource({
     database: "monitoreo_base",
 
     // Indispensable para habilitar TimescaleDB
-    entities: [SensorEntity, Medicion, EquipoEntity, PuntoMonitoreo , Institucion],
+    entities: [SensorEntity, MedicionEntity, EquipoEntity, PuntoMonitoreo , Institucion],
     synchronize: true,  // Activa creación automática de tablas (ideal para desarrollo)
     logging: false,
     

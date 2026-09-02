@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createSensorModule } from "../composition-root/sensor.composition-root";
+import medicionRoutes from "./medicion.routes";
 
 const router = Router({ mergeParams: true });
 
@@ -93,6 +94,8 @@ router.get("/", sensorController.getAll);
  *         description: Sensor ya existe
  */
 router.post("/", sensorController.createSensor);
+
+router.use("/:sensorId/mediciones", medicionRoutes);
 
 /**
  * @swagger

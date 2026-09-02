@@ -3,6 +3,7 @@
 import "reflect-metadata";
 import { AppDataSource } from "../data-source/data-source";
 import { MqttService } from "../services/mqtt.services";
+import { MedicionRepository } from "../repositories/medicion.repository";
 import * as dotenv from 'dotenv';
 
 
@@ -30,7 +31,7 @@ export async function bootstrap( mqttUrl:string ) {
   throw new Error("MQTT_URL is not defined in environment variables");
   }  
     console.log(mqttUrl)
-    const mqttService = new MqttService(mqttUrl);
+    const mqttService = new MqttService(mqttUrl, new MedicionRepository());
     await mqttService.init();
 
     console.log("MQTT Listener iniciado y escuchando en /mediciones");

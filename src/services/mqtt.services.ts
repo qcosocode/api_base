@@ -1,10 +1,8 @@
 // src/mqtt/mqtt.ts
 
 import mqtt, { MqttClient, IClientOptions } from "mqtt";
-import { AppDataSource } from "../data-source/data-source";
-import { MedicionRepository } from "../repositories/medicion.repository";
-// import { SensorRepository } from "../repository/sensor.repository"; // 
-// import { Sensor } from "../entities/sensor";
+import { MedicionEntity } from "../entities/medicion.entity";
+import { IMedicionRepository } from "../interfaces/repositories/medicion.repository.interface";
 
 const options: IClientOptions = {
   username: "MonitoreoIOT",
@@ -24,12 +22,12 @@ interface IncomingMedicionPayload {
 
 export class MqttService {
   private client: MqttClient;
-  private medicionRepo: MedicionRepository;
+  private readonly medicionRepo: IMedicionRepository;
 
-  constructor(  mqttAddress : string ) {
+  constructor(mqttAddress: string, medicionRepo: IMedicionRepository) {
     
     this.client = mqtt.connect(mqttAddress, options);
-    this.medicionRepo = new MedicionRepository();
+    this.medicionRepo = medicionRepo;
   }
 
   /**
@@ -37,15 +35,6 @@ export class MqttService {
    * Llamar una sola vez desde tu entrypoint (index.ts / server.ts).
    */
   async init() {
-    console.log("Inicializando DataSource (si es necesario)...");
-
-    if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
-      console.log("Base de datos conectada.");
-    } else {
-      console.log("DataSource ya estaba inicializado.");
-    }
-
     this.setupEvents();
   }
 
@@ -92,12 +81,14 @@ export class MqttService {
     const currentTime = new Date();
 
     // Mapeamos cada sensor del payload a un objeto de inserción
-    const medicionesToInsert = payload.Sensores.map((s) => ({
-      valor: s.valor,
-      time: currentTime,
+    const medicionesToInsert = payload.Sensores.map((sensorPayload) => {
+      const medicion = new MedicionEntity();
+      medicion.sensor_id = sensorPayload.sensorId;
+      medicion.valor = sensorPayload.valor;
+      medicion.time = currentTime;
       // relación ManyToOne -> sensor. TypeORM permite setear solo la PK
-      sensor: { sensorId: s.sensorId } as any,
-    }));
+      return medicion;
+    });
 
     // Inserción masiva (asumiendo que createMany usa repo.insert o similar)
     await this.medicionRepo.createMany(medicionesToInsert);

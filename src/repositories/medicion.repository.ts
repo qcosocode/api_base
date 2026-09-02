@@ -1,278 +1,72 @@
-
-// src/repository/medicion.repository.ts
-
-import { Repository } from "typeorm";
+import { Repository, SelectQueryBuilder } from "typeorm";
 import { AppDataSource } from "../data-source/data-source";
-import { BaseRepository } from "./base.repository";
-import { Medicion } from "../entities/medicion";
-import { Between } from "typeorm";
-import { GetAllMedicionesQuery, PaginatedResponse, GetBySensorAndRangeQuery, GetBySensorAndWindowQuery } from "../interfaces/medicion.interface";
+import { MedicionEntity } from "../entities/medicion.entity";
+import { IMedicionRepository, MedicionRepositoryPageOptions } from "../interfaces/repositories/medicion.repository.interface";
 
-export class MedicionRepository extends BaseRepository<Medicion> {
+export class MedicionRepository implements IMedicionRepository {
+  private readonly ormRepository: Repository<MedicionEntity>;
 
   constructor() {
-    super(AppDataSource.getRepository(Medicion));
-  }
-   
-  
-
-  private parsePageLimit(query: { page?: string; limit?: string }) {
-    const page = Math.max(parseInt(query.page || "1", 10), 1);
-    const limit = Math.max(parseInt(query.limit || "50", 10), 1);
-    return { page, limit };
+    this.ormRepository = AppDataSource.getRepository(MedicionEntity);
   }
 
+  async findPaged(options: MedicionRepositoryPageOptions): Promise<{ data: MedicionEntity[]; total: number }> {
+    const qb = this.baseQuery();
+    if (options.sensorId) qb.andWhere("s.sensorId = :sensorId", { sensorId: options.sensorId });
+    if (options.equipoId) qb.andWhere("e.equipoId = :equipoId", { equipoId: options.equipoId });
+    this.applyTimeFilters(qb, options.from, options.to);
+    const [data, total] = await qb.orderBy("m.time", "DESC").skip(options.offset).take(options.limit).getManyAndCount();
+    return { data, total };
+  }
 
+  async findPagedBySensorId(
+    sensorId: string,
+    options: Omit<MedicionRepositoryPageOptions, "sensorId" | "equipoId">
+  ): Promise<{ data: MedicionEntity[]; total: number }> {
+    return this.findPaged({ ...options, sensorId });
+  }
 
+  async findLastPerSensor(): Promise<MedicionEntity[]> {
+    const subquery = this.ormRepository.createQueryBuilder("m2")
+      .select("MAX(m2.time)", "max_time").addSelect("m2.sensor_id", "sensor_id").groupBy("m2.sensor_id");
+    return this.baseQuery().innerJoin(
+      `(${subquery.getQuery()})`, "latest", "latest.sensor_id = m.sensor_id AND latest.max_time = m.time"
+    ).setParameters(subquery.getParameters()).orderBy("m.sensor_id", "ASC").getMany();
+  }
 
-   async findAllPaginated(query : GetAllMedicionesQuery): Promise<PaginatedResponse<Medicion>>  {
+  findLastBySensorId(sensorId: string): Promise<MedicionEntity | null> {
+    return this.baseQuery().where("s.sensorId = :sensorId", { sensorId }).orderBy("m.time", "DESC").getOne();
+  }
 
-      {
-    const { page, limit } = this.parsePageLimit(query);
+  findBySensorIdAndRange(sensorId: string, from: Date, to: Date): Promise<MedicionEntity[]> {
+    return this.rangeQuery(sensorId, from, to).getMany();
+  }
 
-    console.log(page);
-    console.log( limit);
+  findBySensorIdAndWindow(sensorId: string, from: Date, to: Date): Promise<MedicionEntity[]> {
+    return this.rangeQuery(sensorId, from, to).getMany();
+  }
 
-    const qb = this.ormRepository
-      .createQueryBuilder("m")
-      .leftJoinAndSelect("m.sensor", "s")
+  findLastByEquipoId(equipoId: string): Promise<MedicionEntity | null> {
+    return this.baseQuery().where("e.equipoId = :equipoId", { equipoId }).orderBy("m.time", "DESC").getOne();
+  }
+
+  async createMany(entities: MedicionEntity[]): Promise<void> {
+    await this.ormRepository.insert(entities);
+  }
+
+  private baseQuery(): SelectQueryBuilder<MedicionEntity> {
+    return this.ormRepository.createQueryBuilder("m")
+      .innerJoinAndSelect("m.sensor", "s")
       .leftJoinAndSelect("s.equipo", "e");
-
-    if (query.sensor_id) {
-      qb.andWhere("s.sensor_id = :sensorId", {
-        sensorId: query.sensor_id,
-      });
-    }
-
-    if (query.equipo_id) {
-      qb.andWhere("e.equipoID = :equipoId", {
-        equipoId: query.equipo_id,
-      });
-    }
-
-    if (query.from) {
-      qb.andWhere("m.time >= :from", {
-        from: new Date(query.from),
-      });
-    }
-
-    if (query.to) {
-      qb.andWhere("m.time <= :to", {
-        to: new Date(query.to),
-      });
-    }
-
-    qb.orderBy("m.time", "DESC")
-      .skip((page - 1) * limit)
-      .take(limit);
-  
-     console.log(qb.getSql());
-     console.log(qb.getParameters());
-
-    const [data, total] = await qb.getManyAndCount();
-    const totalPages = Math.ceil(total / limit) || 1;
-    console.log(total);
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-      from: query.from,
-      to: query.to,
-    };
-  }
-   }
-
-  // ---------------------------------------------------------------------------
-  // GET /mediciones/ultima  (una última por cada sensor)
-  // ---------------------------------------------------------------------------
-  async findLastPerSensor(): Promise<Medicion[]> {
-    // Subquery: max(time) por sensor
-    const subquery = this.ormRepository
-      .createQueryBuilder("m2")
-      .select("MAX(m2.time)", "max_time")
-      .addSelect("m2.sensor_id", "sensor_id")
-      .groupBy("m2.sensor_id");
-
-    const qb = this.ormRepository
-      .createQueryBuilder("m")
-      .innerJoin(
-        "(" + subquery.getQuery() + ")",
-        "sub",
-        "sub.sensor_id = m.sensor_id AND sub.max_time = m.time"
-      )
-      .leftJoinAndSelect("m.sensor", "s")
-      .leftJoinAndSelect("s.equipo", "e")
-      .orderBy("m.sensor_id", "ASC");
-
-    // Si necesitás params del subquery:
-    qb.setParameters(subquery.getParameters());
-
-    return qb.getMany();
   }
 
-
-   // ---------------------------------------------------------------------------
-  // GET /mediciones/sensor/:sensorId
-  // ---------------------------------------------------------------------------
-  async findBySensorPaginated(
-    sensorId: string,
-    query: GetAllMedicionesQuery
-  ): Promise<PaginatedResponse<Medicion>> {
-    const { page, limit } = this.parsePageLimit(query);
-
-    const qb = this.ormRepository
-      .createQueryBuilder("m")
-      .innerJoinAndSelect("m.sensor", "s")
-      .leftJoinAndSelect("s.equipo", "e")
-      .where("s.sensor_id = :sensorId", { sensorId });
-
-    if (query.from) {
-      qb.andWhere("m.time >= :from", {
-        from: new Date(query.from),
-      });
-    }
-
-    if (query.to) {
-      qb.andWhere("m.time <= :to", {
-        to: new Date(query.to),
-      });
-    }
-
-    qb.orderBy("m.time", "DESC")
-      .skip((page - 1) * limit)
-      .take(limit);
-
-    const [data, total] = await qb.getManyAndCount();
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-      from: query.from,
-      to: query.to,
-    };
+  private rangeQuery(sensorId: string, from: Date, to: Date): SelectQueryBuilder<MedicionEntity> {
+    return this.baseQuery().where("s.sensorId = :sensorId", { sensorId })
+      .andWhere("m.time BETWEEN :from AND :to", { from, to }).orderBy("m.time", "ASC");
   }
 
-    // ---------------------------------------------------------------------------
-  // GET /mediciones/sensor/:sensorId/ultima
-  // ---------------------------------------------------------------------------
-  async findLastBySensor(sensorId: string): Promise<Medicion | null> {
-    return this.ormRepository
-      .createQueryBuilder("m")
-      .innerJoinAndSelect("m.sensor", "s")
-      .leftJoinAndSelect("s.equipo", "e")
-      .where("s.sensor_id = :sensorId", { sensorId })
-      .orderBy("m.time", "DESC")
-      .getOne();
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /mediciones/sensor/:sensorId/rango
-  // ---------------------------------------------------------------------------
-  async findBySensorAndRange(
-    sensorId: string,
-    query: GetBySensorAndRangeQuery
-  ): Promise<Medicion[]> {
-    const from = new Date(query.from);
-    const to = new Date(query.to);
-
-    return this.ormRepository
-      .createQueryBuilder("m")
-      .innerJoinAndSelect("m.sensor", "s")
-      .leftJoinAndSelect("s.equipo", "e")
-      .where("s.sensor_id = :sensorId", { sensorId })
-      .andWhere("m.time BETWEEN :from AND :to", { from, to })
-      .orderBy("m.time", "ASC")
-      .getMany();
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /mediciones/sensor/:sensorId/window
-  // ---------------------------------------------------------------------------
-  async findBySensorAndWindow(
-    sensorId: string,
-    query: GetBySensorAndWindowQuery
-  ): Promise<Medicion[]> {
-    const now = new Date();
-    const hours = parseInt(query.hours || "0", 10);
-    let minutes = parseInt(query.minutes || "0", 10);
-    console.log(query);
-    console.log(query.hours);
-    if (!hours && !minutes) minutes = 10;
-
-    const from = new Date(now.getTime() - (hours * 60 + minutes) * 60 * 1000);
-
-    return this.ormRepository
-      .createQueryBuilder("m")
-      .innerJoinAndSelect("m.sensor", "s")
-      .leftJoinAndSelect("s.equipo", "e")
-      .where("s.sensor_id = :sensorId", { sensorId })
-      .andWhere("m.time BETWEEN :from AND :to", { from, to: now })
-      .orderBy("m.time", "ASC")
-      .getMany();
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /mediciones/equipo/:equipoId/ultima
-  // ---------------------------------------------------------------------------
-  async findLastByEquipo(equipoId: string): Promise<Medicion | null> {
-    return this.ormRepository
-      .createQueryBuilder("m")
-      .innerJoinAndSelect("m.sensor", "s")
-      .innerJoinAndSelect("s.equipo", "e")
-      .where("e.equipoID = :equipoId", { equipoId })
-      .orderBy("m.time", "DESC")
-      .getOne();
-  }
-
-
-
-  /**
-   * Obtiene todas las mediciones de un sensor por su sensor_id
-   */
-  async findBySensorId(sensorId: string): Promise<Medicion[]> {
-    return this.ormRepository.find({
-      where: { sensor: { sensorId: sensorId } },
-      order: { time: "DESC" },
-    });
-  }
-
-  /**
-   * Obtiene la última medición registrada para un sensor
-   */
-  async findLastBySensorId(sensorId: string): Promise<Medicion | null> {
-    return this.ormRepository.findOne({
-      where: { sensor: { sensorId: sensorId } },
-      order: { time: "DESC" },
-    });
-  }
-
-  /**
-   * Obtiene mediciones dentro de un rango de tiempo (TimescaleDB optimizado)
-   */
-  async findInRange(sensorId: string, from: Date, to: Date): Promise<Medicion[]> {
-    return this.ormRepository.find({
-      where: {
-        sensor: { sensorId: sensorId },
-        time: Between(from, to),
-      },
-      order: { time: "ASC" },
-    });
-  }
-
-  /**
-   * Inserta muchas mediciones a la vez (Timescale ideal)
-   * Usa insert() porque es más rápido que save para grandes volúmenes
-   */
-  async createMany(data: Partial<Medicion>[]): Promise<void> {
-    await this.ormRepository.insert(data);
+  private applyTimeFilters(qb: SelectQueryBuilder<MedicionEntity>, from?: Date, to?: Date): void {
+    if (from) qb.andWhere("m.time >= :from", { from });
+    if (to) qb.andWhere("m.time <= :to", { to });
   }
 }
-
-
-

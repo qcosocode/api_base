@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { EquipoEntity } from "./equipo.entity";
-import { Medicion } from "./medicion";
+import { MedicionEntity } from "./medicion.entity";
 
 @Entity({ name: "sensores" })
 export class SensorEntity {
@@ -32,6 +32,6 @@ export class SensorEntity {
   @JoinColumn({ name: "equipo_id" })
   equipo: EquipoEntity;
 
-  @OneToMany(() => Medicion, medicion => medicion.sensor)
-  mediciones: Medicion[];
+  @OneToMany(() => MedicionEntity, medicion => medicion.sensor)
+  mediciones: MedicionEntity[];
 }

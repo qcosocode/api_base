@@ -3,7 +3,6 @@
 
 
 import { Repository, ObjectLiteral , DeepPartial } from "typeorm";  // sin OBjectLiteral typeORM no entiende 
-import { PaginatedResponse } from "../interfaces/medicion.interface";
 
 /* 
 T es un genérico pero para TypeORM debe ser un objectliteral 

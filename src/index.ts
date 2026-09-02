@@ -6,7 +6,7 @@ dotenv.config();
 
 
 
-import medicionesRoutes from './routes/medicion.routes';
+import medicionesRoutes from './routes/medicion-global.routes';
 import equiposRoutes from './routes/equipo.routes';
 import sensorRoutes from './routes/sensor.route';
 
